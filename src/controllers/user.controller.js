@@ -1,75 +1,93 @@
-import {asyncHandler} from "../utils/AsyncHandler.js";
-import {ApiError} from "../utils/ApiError.js"
-import {User} from "../models/user.model.js";
-import {ApiResponse} from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/AsyncHandler.js";
+import { ApiError } from "../utils/ApiError.js";
+import { User } from "../models/user.model.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken"; // make sure this is imported
 
-const registerUser = asyncHandler(async (req, res)=> {
-    // get user details from frontend
-    const {fullname, email, username, password} = req.body
+// Register User
+const registerUser = asyncHandler(async (req, res) => {
+    const { fullname, email, username, password } = req.body;
     console.log("email", email);
 
-    // validation - not empty
-    if(
-        [fullname, email, username, password].some((field)=> field?.trim() === "")
-    ) {
+    if ([fullname, email, username, password].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "Please fill in all fields");
     }
 
-    // check if user already exists: username, email
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
 
     if (existingUser) {
         throw new ApiError(409, "User already exists");
     }
 
-    // create user object - create entry in db
     const createdUser = await User.create({
         fullname,
         email,
         username,
         password,
-    })
+    });
 
-    // return res
     return res.status(201).json(new ApiResponse(200, createdUser, "User created successfully"));
+});
 
-})
-
-
+// Login User
 const loginUser = asyncHandler(async (req, res) => {
-    // get user details from frontend
-    const {email, password} = req.body;
+    const { email, password } = req.body;
 
-    // validation - not empty
-    if([email, password].some((field)=> field?.trim() === "")) {
+    if ([email, password].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "Please fill in all fields");
     }
 
-    // check if user exists
-    const existingUser = await User.findOne({email});
+    const existingUser = await User.findOne({ email });
 
-    if(!existingUser) {
+    if (!existingUser) {
         throw new ApiError(404, "User not found");
     }
 
-    // check if password is correct
     const isPasswordCorrect = await existingUser.isPasswordCorrect(password);
 
-    if(!isPasswordCorrect) {
+    if (!isPasswordCorrect) {
         throw new ApiError(401, "Invalid credentials");
     }
 
-    // generate token
     const accessToken = existingUser.generateAccessToken();
     const refreshToken = existingUser.generateRefreshToken();
 
-    // save refresh token in db
+    res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production", // ensure cookie is only sent in HTTPS in production
+        sameSite: "None", // use "None" if cookies are sent across different domains or in cross-origin requests
+        maxAge: 3600000, // Optional: Set expiration for the cookie (1 hour in this case)
+    });
+
     existingUser.refreshToken = refreshToken;
     await existingUser.save();
 
-    // return res
-    return res.status(200).json(new ApiResponse(200, {accessToken, refreshToken}, "Login successful"));
+    return res.status(200).json(new ApiResponse(200, { accessToken, refreshToken }, "Login successful"));
+});
 
-})
+// Get Current User (using cookie to verify token)
+const getMe = asyncHandler(async (req, res) => {
+    const token = req.cookies.accessToken;  // Get token from cookies
 
-export {registerUser, loginUser};
+    if (!token) {
+        throw new ApiError(401, "Authentication token is missing");
+    }
+
+    // Verify token
+    let decoded;
+    try {
+        decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    } catch (err) {
+        throw new ApiError(401, "Invalid or expired token");
+    }
+
+    const user = await User.findById(decoded._id).select("-password"); // Exclude password for security
+
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+
+    return res.status(200).json(new ApiResponse(200, user, "User details fetched successfully"));
+});
+
+export { registerUser, loginUser, getMe };

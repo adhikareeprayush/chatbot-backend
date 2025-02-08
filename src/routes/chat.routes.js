@@ -1,8 +1,8 @@
 import { Router } from "express";
-import {generateResponse} from "../controllers/chat.controller.js";
+import {fetchResponse} from "../controllers/chat.controller.js";
 
 const router = Router();
 
-router.post("/generate", generateResponse);
+router.post("/generate", fetchResponse);
 
 export default router; 

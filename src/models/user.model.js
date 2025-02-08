@@ -26,6 +26,12 @@ const userSchema = new Schema(
         trim: true,
         index: true
      }, 
+     chatHisotry: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Chat"
+        }
+     ],
     password:{
         type:String,
         required:[true, "Password is required"],
