@@ -54,9 +54,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // ensure cookie is only sent in HTTPS in production
-        sameSite: "None", // use "None" if cookies are sent across different domains or in cross-origin requests
-        maxAge: 3600000, // Optional: Set expiration for the cookie (1 hour in this case)
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "None",
+        maxAge: 3600000,
     });
 
     existingUser.refreshToken = refreshToken;
@@ -67,7 +67,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // Get Current User (using cookie to verify token)
 const getMe = asyncHandler(async (req, res) => {
-    const token = req.cookies.accessToken;  // Get token from cookies
+    // get token from headers
+    const token = req.headers.authorization?.split(" ")[1];
+    console.log("token", token);
 
     if (!token) {
         throw new ApiError(401, "Authentication token is missing");
