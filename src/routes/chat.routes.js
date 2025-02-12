@@ -1,8 +1,10 @@
-import { Router } from "express";
-import {fetchResponse} from "../controllers/chat.controller.js";
+import express from "express";
+import { startNewChat, sendChatMessage, getChatHistory } from "../controllers/chat.controller.js";
 
-const router = Router();
+const router = express.Router();
 
-router.post("/generate", fetchResponse);
+router.post("/start", startNewChat); // Start new main chat
+router.post("/send", sendChatMessage); // Send message in sub-chat
+router.get("/:userId/:sessionId", getChatHistory); // Get chat history
 
-export default router; 
+export default router;

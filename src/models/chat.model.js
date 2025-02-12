@@ -1,7 +1,16 @@
-import mongoose, {Schema} from "mongoose";
+import mongoose, { Schema } from "mongoose";
 
 const chatSchema = new Schema(
     {
+        sessionId: {
+            type: String, // Unique session identifier
+            required: true,
+        },
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
         prompt: {
             type: String,
             required: true,
@@ -15,6 +24,6 @@ const chatSchema = new Schema(
     {
         timestamps: true,
     }
-)
+);
 
 export const Chat = mongoose.model("Chat", chatSchema);
