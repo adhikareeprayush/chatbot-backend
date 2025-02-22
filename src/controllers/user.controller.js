@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken"; // make sure this is imported
 // Register User
 const registerUser = asyncHandler(async (req, res) => {
     const { fullname, email, username, password } = req.body;
-    console.log("email", email);
+    // console.log("email", email);
 
     if ([fullname, email, username, password].some((field) => field?.trim() === "")) {
         throw new ApiError(400, "Please fill in all fields");
@@ -69,7 +69,7 @@ const loginUser = asyncHandler(async (req, res) => {
 const getMe = asyncHandler(async (req, res) => {
     // get token from headers
     const token = req.headers.authorization?.split(" ")[1];
-    console.log("token", token);
+    // console.log("token", token);
 
     if (!token) {
         throw new ApiError(401, "Authentication token is missing");

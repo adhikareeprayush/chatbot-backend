@@ -11,6 +11,11 @@ const chatSchema = new Schema(
             ref: "User",
             required: true,
         },
+        summary: {
+            type: String,
+            required: true,
+            trim: true,
+        },
         prompt: {
             type: String,
             required: true,
