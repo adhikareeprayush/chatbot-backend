@@ -1,5 +1,3 @@
-API_TOKEN=""
-
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -18,10 +16,8 @@ from dotenv import load_dotenv
 import warnings
 
 # Load the .env file
-load_dotenv()  # This will load the variables from the .env file
 
 # Access the token
-# API_TOKEN = os.getenv("HF_API_TOKEN")
 
 API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.3"
 warnings.filterwarnings('ignore')
