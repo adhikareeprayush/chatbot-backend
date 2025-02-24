@@ -1,4 +1,4 @@
-API_TOKEN="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"
+API_TOKEN=""
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
