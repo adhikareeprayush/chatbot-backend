@@ -32,13 +32,18 @@ export const sendChatMessage = asyncHandler(async (req, res) => {
         .sort({ createdAt: 1 }) // Oldest messages first
         .limit(10);
 
+        const simplifiedPastMessages = pastMessages.map(message => ({
+            prompt: message.prompt,
+            response: message.response
+        }));
+
     // Extract the first message in the session
     let firstMessage = await Chat.findOne({ userId, sessionId }).sort({ createdAt: 1 });
-    console.log("firstMessage", firstMessage);
+    // console.log("firstMessage", firstMessage);
 
     let summaryText = "Summary not available";
     if(firstMessage == null) {
-        console.log(prompt);
+        // console.log(prompt);
         firstMessage = prompt;
     }
 
@@ -62,36 +67,27 @@ export const sendChatMessage = asyncHandler(async (req, res) => {
     }
     
     const summaryData = await summaryResponse.json();
-    console.log(summaryData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim());
+    // console.log(summaryData?.candidates?.[0]?.content?.parts?.[0]?.text?.trim());
     // Extract the summary text from the API response
 
     summaryText = summaryData?.candidates?.[0]?.content?.parts?.[0]?.text || "Summary not generated";
     }
 
+    console.log(simplifiedPastMessages);
     // Build AI context
-    const contextPrompt = buildContextPrompt(prompt, pastMessages);
+    const contextPrompt = buildContextPrompt(prompt, simplifiedPastMessages);
     const engineeredPrompt = formatPrompt(contextPrompt);
+
+    console.log(engineeredPrompt);
 
     // Fetch AI response from Gemini API
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.0-pro:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `http://localhost:8000/query`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: engineeredPrompt }] }],
-                generationConfig: {
-                    temperature: 0.7,
-                    topK: 40,
-                    topP: 0.95,
-                    maxOutputTokens: 1024,
-                },
-                safetySettings: [
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                ],
+               query : engineeredPrompt 
             }),
         }
     );
@@ -100,12 +96,15 @@ export const sendChatMessage = asyncHandler(async (req, res) => {
         throw new ApiError(500, "Failed to fetch response from AI");
     }
 
+    // console.log(response.)
+
     const data = await response.json();
-    if (!data.candidates?.[0].content.parts?.[0].text) {
+    if (!data.response) {
         throw new ApiError(500, "Invalid AI response format");
     }
 
-    const rawResponse = data.candidates[0].content.parts[0].text.trim();
+    // console.log(data.response);
+    const rawResponse = data.response.trim();
     const cleanedResponse = cleanResponse(rawResponse);
 
     // Save chat message along with the summary

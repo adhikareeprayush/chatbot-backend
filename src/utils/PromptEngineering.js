@@ -38,9 +38,19 @@ export const cleanResponse = (response) => {
 
 
 export const buildContextPrompt = (newPrompt, messages) => {
+  // Ensure messages is an array
+  if (!Array.isArray(messages)) {
+    throw new Error("Messages must be an array");
+  }
+
+  // Slice the last MAX_CONTEXT_MESSAGES messages
   const contextMessages = messages.slice(-MAX_CONTEXT_MESSAGES);
+
+  // Build the context by combining prompts and responses
   const context = contextMessages
-    .map(msg => `${msg.text}`)
+    .map((msg) => `User: ${msg.prompt}\nAI: ${msg.response}`)
     .join('\n\n');
-  return context ? `${context}\n\n${newPrompt}` : newPrompt;
+
+  // Append the new prompt to the context
+  return context ? `${context}\n\nUser: ${newPrompt}` : `User: ${newPrompt}`;
 };
